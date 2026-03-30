@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>종목 분석 시스템</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --bg2: #13161e;
+    --bg3: #1a1e29;
+    --bg4: #222636;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --accent: #4f8ef7;
+    --accent2: #3a6fd4;
+    --accent-dim: rgba(79,142,247,0.12);
+    --green: #3ecf8e;
+    --green-dim: rgba(62,207,142,0.12);
+    --red: #f05e5e;
+    --red-dim: rgba(240,94,94,0.12);
+    --amber: #f5a623;
+    --amber-dim: rgba(245,166,35,0.12);
+    --text: #e8eaf0;
+    --text2: #8b90a0;
+    --text3: #555a6e;
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ── Layout ── */
+  .app {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .logo {
+    padding: 0 8px;
+  }
+  .logo-mark {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .logo h1 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .logo p {
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 4px;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* API Key Input */
+  .api-section label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: block;
+    margin-bottom: 8px;
+    padding: 0 2px;
+  }
+  .api-input-wrap {
+    position: relative;
+  }
+  .api-input-wrap input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 9px 36px 9px 12px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .api-input-wrap input:focus { border-color: var(--accent); }
+  .api-input-wrap input::placeholder { color: var(--text3); }
+  .api-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    padding: 2px;
+    font-size: 13px;
+  }
+  .api-toggle:hover { color: var(--text2); }
+  .api-note {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+  .api-note a { color: var(--accent); text-decoration: none; }
+  .api-note a:hover { text-decoration: underline; }
+
+  /* Ticker Input */
+  .ticker-section label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: block;
+    margin-bottom: 8px;
+    padding: 0 2px;
+  }
+  .ticker-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 15px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .ticker-input:focus { border-color: var(--accent); }
+  .ticker-input::placeholder { color: var(--text3); font-weight: 400; font-size: 13px; }
+
+  .quick-tickers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 8px;
+  }
+  .qt {
+    font-size: 11px;
+    padding: 4px 9px;
+    border-radius: 6px;
+    background: var(--bg4);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .qt:hover {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Category List */
+  .cat-section label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: block;
+    margin-bottom: 10px;
+    padding: 0 2px;
+  }
+  .cat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .cat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+  }
+  .cat-item:hover {
+    background: var(--bg3);
+    border-color: var(--border);
+  }
+  .cat-item.active {
+    background: var(--accent-dim);
+    border-color: rgba(79,142,247,0.3);
+  }
+  .cat-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--bg4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text3);
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .cat-item.active .cat-num {
+    background: var(--accent);
+    color: #fff;
+  }
+  .cat-label {
+    font-size: 13px;
+    color: var(--text2);
+    transition: color 0.15s;
+  }
+  .cat-item.active .cat-label {
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .cat-item:hover .cat-label { color: var(--text); }
+
+  /* Run buttons */
+  .run-btn {
+    width: 100%;
+    padding: 11px;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .run-btn:hover { background: var(--accent2); }
+  .run-btn:active { transform: scale(0.98); }
+  .run-btn:disabled { background: var(--bg4); color: var(--text3); cursor: not-allowed; }
+
+  .all-btn {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--text2);
+    font-size: 13px;
+    font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 6px;
+  }
+  .all-btn:hover {
+    background: var(--bg3);
+    border-color: var(--border2);
+    color: var(--text);
+  }
+  .all-btn:disabled { color: var(--text3); cursor: not-allowed; }
+
+  /* ── Main ── */
+  .main {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .topbar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .ticker-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .cat-badge {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+  }
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--text3);
+    transition: background 0.3s;
+  }
+  .status-dot.running {
+    background: var(--accent);
+    animation: pulse 1s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .content {
+    flex: 1;
+    padding: 28px;
+  }
+
+  /* ── Empty state ── */
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: 16px;
+    text-align: center;
+  }
+  .empty-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+  .empty h2 {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text2);
+  }
+  .empty p {
+    font-size: 14px;
+    color: var(--text3);
+    max-width: 360px;
+  }
+  .empty-steps {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    color: var(--text3);
+  }
+  .step-num {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+  }
+
+  /* ── Result ── */
+  .result-wrap {
+    max-width: 860px;
+  }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .res-ticker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .res-cat {
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 7px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(79,142,247,0.25);
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .res-time {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'JetBrains Mono', monospace;
+    margin-left: auto;
+  }
+
+  .result-body {
+    font-size: 14.5px;
+    line-height: 1.85;
+    color: var(--text2);
+  }
+
+  .result-body h1,
+  .result-body h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 1.5rem 0 0.5rem;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .result-body h1:first-child,
+  .result-body h2:first-child { margin-top: 0; }
+
+  .result-body h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 1.2rem 0 0.4rem;
+  }
+
+  .result-body p { margin-bottom: 0.8rem; }
+
+  .result-body strong { color: var(--text); font-weight: 600; }
+
+  .result-body em { color: var(--amber); font-style: normal; }
+
+  .result-body ul, .result-body ol {
+    padding-left: 20px;
+    margin: 0.5rem 0 0.8rem;
+  }
+  .result-body li { margin-bottom: 0.3rem; }
+
+  .result-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 13px;
+  }
+  .result-body th {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .result-body td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    color: var(--text2);
+    vertical-align: top;
+  }
+  .result-body tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+  .result-body blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 1rem 0;
+    padding: 10px 16px;
+    background: var(--accent-dim);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    color: var(--text);
+  }
+
+  .result-body code {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--green);
+  }
+
+  .result-body hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.5rem 0;
+  }
+
+  /* Tag badges inside result */
+  .tag-high { background: var(--red-dim); color: var(--red); border: 1px solid rgba(240,94,94,0.25); padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 600; }
+  .tag-mid  { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,166,35,0.25); padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 600; }
+  .tag-low  { background: var(--green-dim); color: var(--green); border: 1px solid rgba(62,207,142,0.25); padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 600; }
+
+  /* Cursor blink */
+  .cursor { display: inline-block; width: 2px; height: 15px; background: var(--accent); margin-left: 2px; vertical-align: middle; animation: blink 0.9s step-end infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* After-analysis quick actions */
+  .quick-actions {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .qa-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    margin-bottom: 10px;
+  }
+  .qa-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+  .qa-btn {
+    font-size: 12px;
+    padding: 7px 13px;
+    border-radius: 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif;
+    transition: all 0.15s;
+  }
+  .qa-btn:hover {
+    background: var(--accent-dim);
+    border-color: rgba(79,142,247,0.3);
+    color: var(--accent);
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--text2);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.25s;
+    z-index: 999;
+    max-width: 320px;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.error { border-color: rgba(240,94,94,0.4); color: var(--red); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; }
+    .content { padding: 20px; }
+    .topbar { padding: 12px 20px; }
+  }
+
+  /* Loading skeleton */
+  .skeleton {
+    background: linear-gradient(90deg, var(--bg3) 25%, var(--bg4) 50%, var(--bg3) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+    height: 14px;
+    margin-bottom: 10px;
+  }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">Stock Analyzer</div>
+      <h1>종목 분석<br>시스템</h1>
+      <p>AI 기반 10개 카테고리 분석</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- API Key -->
+    <div class="api-section">
+      <label>Anthropic API Key</label>
+      <div class="api-input-wrap">
+        <input type="password" id="api-key" placeholder="sk-ant-api03-..." />
+        <button class="api-toggle" onclick="toggleApiKey()" title="보이기/숨기기">
+          <span id="eye-icon">👁</span>
+        </button>
+      </div>
+      <p class="api-note">
+        <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+        에서 발급. 키는 브라우저에만 저장됩니다.
+      </p>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Ticker -->
+    <div class="ticker-section">
+      <label>종목 입력</label>
+      <input type="text" class="ticker-input" id="ticker" placeholder="셀트리온, NVDA, 삼성전자..." />
+      <div class="quick-tickers">
+        <span class="qt" onclick="setTicker('셀트리온')">셀트리온</span>
+        <span class="qt" onclick="setTicker('삼성전자')">삼성전자</span>
+        <span class="qt" onclick="setTicker('카카오')">카카오</span>
+        <span class="qt" onclick="setTicker('NVDA')">NVDA</span>
+        <span class="qt" onclick="setTicker('AAPL')">AAPL</span>
+        <span class="qt" onclick="setTicker('TSLA')">TSLA</span>
+        <span class="qt" onclick="setTicker('META')">META</span>
+        <span class="qt" onclick="setTicker('현대차')">현대차</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Categories -->
+    <div class="cat-section">
+      <label>분석 카테고리</label>
+      <div class="cat-list" id="cat-list"></div>
+    </div>
+
+    <!-- Buttons -->
+    <div style="margin-top:auto;display:flex;flex-direction:column;gap:6px;padding-top:8px;">
+      <button class="run-btn" id="run-btn" onclick="runSingle()">선택 카테고리 분석 ↗</button>
+      <button class="all-btn" id="all-btn" onclick="runAll()">전체 10개 종합 분석</button>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="ticker-badge" id="topbar-ticker">—</span>
+        <span class="cat-badge" id="topbar-cat">카테고리 미선택</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="status-dot" id="status-dot"></div>
+        <span style="font-size:12px;color:var(--text3)" id="status-txt">대기 중</span>
+      </div>
+    </div>
+
+    <div class="content" id="content">
+      <div class="empty" id="empty-state">
+        <div class="empty-icon">📊</div>
+        <h2>종목 분석을 시작하세요</h2>
+        <p>AI가 웹 검색을 통해 최신 데이터를 반영한 심층 분석을 제공합니다</p>
+        <div class="empty-steps">
+          <div class="step"><div class="step-num">1</div> API 키 입력</div>
+          <div class="step" style="color:var(--text3)">→</div>
+          <div class="step"><div class="step-num">2</div> 종목 입력</div>
+          <div class="step" style="color:var(--text3)">→</div>
+          <div class="step"><div class="step-num">3</div> 카테고리 선택</div>
+          <div class="step" style="color:var(--text3)">→</div>
+          <div class="step"><div class="step-num">4</div> 분석 시작</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CATS = [
+  {id:1, label:"매크로 분석"},
+  {id:2, label:"산업 분석"},
+  {id:3, label:"경쟁회사 분석"},
+  {id:4, label:"기업 분석"},
+  {id:5, label:"제품·서비스 경쟁력"},
+  {id:6, label:"지배구조 및 인물 분석"},
+  {id:7, label:"재무 분석"},
+  {id:8, label:"밸류에이션 분석"},
+  {id:9, label:"기술적 분석"},
+  {id:10, label:"리스크 분석"}
+];
+
+const PROMPTS = {
+  1: t => `종목 "${t}" 매크로 분석을 해줘. 분석 항목: 금리, 환율, 물가, 경기 사이클, 정부 정책, 원자재 가격, 글로벌 수요 변화. 핵심 질문: 지금 이 종목이 속한 산업은 거시 환경에서 순풍인가 역풍인가? 최신 데이터 기반으로 분석하고 마지막에 핵심 인사이트를 요약해줘.`,
+  2: t => `종목 "${t}" 산업 분석을 해줘. 분석 항목: 시장 규모와 성장률, 산업 사이클, 규제 환경, 진입장벽, 대체재, 공급망 구조, 협상력 구조. 핵심 질문: 이 산업은 장기적으로 커지는가? 구조적으로 돈 벌기 쉬운 산업인가? 간결하게 분석해줘.`,
+  3: t => `종목 "${t}" 경쟁사 분석을 해줘. 분석 항목: 시장점유율, 경쟁사 수와 강도, 가격 경쟁 여부, 점유율 흐름, 원가 구조, 브랜드력, 기술 우위, 해외/국내 경쟁 구도. 주요 경쟁사를 명시하고 비교 분석해줘.`,
+  4: t => `종목 "${t}" 기업 분석을 해줘. 분석 항목: 비즈니스 모델, 매출 구조, 수익 구조, 고객 구성, 주요 사업부 비중, 반복 매출 여부, CAPEX 구조, 현금창출력. 핵심 질문: 이 회사는 어떻게 돈을 버는가? 레버리지 구조는?`,
+  5: t => `종목 "${t}" 제품·서비스 경쟁력을 분석해줘. 분석 항목: 핵심 제품/서비스, 제품 경쟁력, 가격 경쟁력, 기술력, 신제품 파이프라인, 고객 충성도, B2B/B2C 구조. 핵심 질문: 이 제품은 진짜 좋은가? 왜 선택받는가?`,
+  6: t => `종목 "${t}" 지배구조 및 인물 분석을 해줘. 지배구조: 대주주, 지분율, 지분변동, 자사주, CB/BW 가능성, 오너 리스크, 소액주주 친화성. 인물: CEO 경력, 이사회 독립성, 임원진 전문성, 자본배분 성향. 핵심 질문: 주주와 이해관계가 일치하는가?`,
+  7: t => `종목 "${t}" 재무 분석을 해줘. 분석 항목: 매출 성장률, 영업이익률, 순이익률, ROE, ROIC, 부채비율, 이자보상배율, FCF, 운전자본, CAPEX, 희석 여부. 핵심 질문: 숫자가 실제로 개선되고 있는가? 이익의 질이 좋은가? 최근 수치를 포함해 분석해줘.`,
+  8: t => `종목 "${t}" 밸류에이션 분석을 해줘. 분석 항목: PER, PBR, EV/EBITDA, PSR, Peer 비교, 역사적 밴드. 핵심 질문: 지금 가격이 비싼가? 기대가 이미 다 반영된 상태인가? 현재 수치와 비교해서 상승/하락 여력을 제시해줘.`,
+  9: t => `종목 "${t}" 기술적 분석을 해줘. 분석 항목: 장기·중기 추세, 거래량, 수급, 지지/저항, 이평선 배열, RSI/MACD, 신고가/신저가 흐름. 핵심 질문: 지금 들어가면 비효율적인 자리인가? 시장이 이 종목을 실제로 사주고 있는가?`,
+  10: t => `종목 "${t}" 리스크 분석을 해줘. 분석 항목: 오너 리스크, 규제 리스크, 기술 실패, 고객사 이탈, 원가 상승, 경쟁 심화, 소송, 증자, 실적 미스, 산업 침체. 각 리스크 항목을 낮음/중간/높음으로 평가하고 핵심 질문: 투자 논리가 틀릴 수 있는 이유는?`
+};
+
+const ALL_PROMPT = t => `종목 "${t}"에 대해 다음 10가지 카테고리로 종합 분석을 해줘. 웹 검색을 활용해 최신 데이터를 반영하고, 각 카테고리별로 핵심만 간결하게 분석한 뒤 마지막에 종합 투자 의견(Bull Case / Bear Case / 모니터링 포인트 / 한 줄 요약)을 제시해줘.
+
+1. 매크로 분석 (금리, 환율, 물가, 경기 사이클, 정부 정책)
+2. 산업 분석 (시장 규모·성장률, 진입장벽, 협상력 구조)
+3. 경쟁사 분석 (시장점유율, 경쟁 강도, 원가 구조, 기술 우위)
+4. 기업 분석 (비즈니스 모델, 매출·수익 구조, CAPEX, 현금창출력)
+5. 제품·서비스 경쟁력 (핵심 제품, 경쟁력, 파이프라인, 고객 충성도)
+6. 지배구조 및 인물 분석 (대주주, 지분율, CEO 경력, 주주 친화성)
+7. 재무 분석 (매출 성장률, 이익률, ROE, FCF, 부채비율)
+8. 밸류에이션 분석 (PER, PBR, EV/EBITDA, Peer 비교, 역사적 밴드)
+9. 기술적 분석 (장·중기 추세, 거래량, 지지·저항, 이평선, RSI)
+10. 리스크 분석 (오너 리스크, 규제, 경쟁 심화, 실적 미스 등)`;
+
+let selectedCat = null;
+let isRunning = false;
+
+// Build category list
+const catList = document.getElementById('cat-list');
+CATS.forEach(c => {
+  const el = document.createElement('div');
+  el.className = 'cat-item';
+  el.dataset.id = c.id;
+  el.innerHTML = `<span class="cat-num">${c.id}</span><span class="cat-label">${c.label}</span>`;
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.cat-item').forEach(x => x.classList.remove('active'));
+    el.classList.add('active');
+    selectedCat = c.id;
+    document.getElementById('topbar-cat').textContent = c.label;
+  });
+  catList.appendChild(el);
+});
+
+function setTicker(name) {
+  document.getElementById('ticker').value = name;
+  document.getElementById('topbar-ticker').textContent = name;
+}
+
+function toggleApiKey() {
+  const inp = document.getElementById('api-key');
+  const icon = document.getElementById('eye-icon');
+  if (inp.type === 'password') { inp.type = 'text'; icon.textContent = '🔒'; }
+  else { inp.type = 'password'; icon.textContent = '👁'; }
+}
+
+document.getElementById('ticker').addEventListener('input', e => {
+  document.getElementById('topbar-ticker').textContent = e.target.value || '—';
+});
+
+document.getElementById('ticker').addEventListener('keydown', e => {
+  if (e.key === 'Enter') runSingle();
+});
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  setTimeout(() => { t.className = 'toast'; }, 3500);
+}
+
+function validate() {
+  const key = document.getElementById('api-key').value.trim();
+  const ticker = document.getElementById('ticker').value.trim();
+  if (!key) { showToast('API 키를 입력해주세요', 'error'); return null; }
+  if (!ticker) { showToast('종목명을 입력해주세요', 'error'); return null; }
+  return { key, ticker };
+}
+
+function setRunning(state) {
+  isRunning = state;
+  document.getElementById('run-btn').disabled = state;
+  document.getElementById('all-btn').disabled = state;
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-txt');
+  dot.className = 'status-dot' + (state ? ' running' : '');
+  txt.textContent = state ? '분석 중...' : '완료';
+}
+
+function runSingle() {
+  if (isRunning) return;
+  const v = validate();
+  if (!v) return;
+  if (!selectedCat) { showToast('카테고리를 선택해주세요', 'error'); return; }
+  const cat = CATS.find(c => c.id === selectedCat);
+  runAnalysis(v.key, v.ticker, selectedCat, cat.label);
+}
+
+function runAll() {
+  if (isRunning) return;
+  const v = validate();
+  if (!v) return;
+  runAnalysis(v.key, v.ticker, 0, '전체 종합 분석 (10개 카테고리)');
+}
+
+async function runAnalysis(apiKey, ticker, catId, catLabel) {
+  setRunning(true);
+  document.getElementById('empty-state') && document.getElementById('empty-state').remove();
+
+  const prompt = catId === 0 ? ALL_PROMPT(ticker) : PROMPTS[catId](ticker);
+  const now = new Date().toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
+
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="result-wrap" id="result-wrap">
+      <div class="result-header">
+        <span class="res-ticker">${ticker}</span>
+        <span class="res-cat">${catLabel}</span>
+        <span class="res-time">${now}</span>
+      </div>
+      <div class="result-body" id="result-body">
+        <div class="skeleton" style="width:70%"></div>
+        <div class="skeleton" style="width:90%"></div>
+        <div class="skeleton" style="width:60%"></div>
+      </div>
+    </div>`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-calls': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        stream: true,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        system: `당신은 전문 주식 분석가입니다. 웹 검색을 활용해 최신 데이터를 반영하고, 체계적이고 간결하게 분석합니다. 한국어로 답변하며 마크다운 형식(##, ###, **굵게**, 표, 목록)을 적극 활용합니다. 분석은 사실에 기반하며 투자 참고용임을 명시합니다. 리스크 항목은 '높음/중간/낮음' 태그로 표시합니다.`,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    const body = document.getElementById('result-body');
+    body.innerHTML = '';
+    let fullText = '';
+    let searchStatus = '';
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6).trim();
+        if (raw === '[DONE]') continue;
+        try {
+          const ev = JSON.parse(raw);
+          if (ev.type === 'content_block_start' && ev.content_block?.type === 'tool_use') {
+            searchStatus = '웹 검색 중...';
+            document.getElementById('status-txt').textContent = searchStatus;
+          }
+          if (ev.type === 'content_block_start' && ev.content_block?.type === 'text') {
+            if (searchStatus) {
+              document.getElementById('status-txt').textContent = '분석 중...';
+              searchStatus = '';
+            }
+          }
+          if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
+            fullText += ev.delta.text;
+            body.innerHTML = renderMarkdown(fullText) + '<span class="cursor"></span>';
+            body.scrollIntoView({ behavior: 'smooth', block: 'end' });
+          }
+        } catch(e) {}
+      }
+    }
+
+    body.innerHTML = renderMarkdown(fullText);
+    appendQuickActions(ticker, catId);
+    setRunning(false);
+    document.getElementById('status-txt').textContent = '분석 완료';
+
+  } catch(err) {
+    document.getElementById('result-body').innerHTML = `
+      <div style="color:var(--red);font-size:14px;padding:20px;background:var(--red-dim);border-radius:var(--radius);border:1px solid rgba(240,94,94,0.2)">
+        <strong>오류 발생:</strong> ${err.message}
+        <br><br>
+        <small style="color:var(--text3)">API 키를 확인하거나 잠시 후 다시 시도해주세요. CORS 오류가 발생하면 브라우저의 CORS 정책으로 인해 로컬 파일에서는 동작하지 않을 수 있습니다. 웹서버에서 실행해주세요.</small>
+      </div>`;
+    setRunning(false);
+    document.getElementById('status-txt').textContent = '오류';
+    showToast(err.message, 'error');
+  }
+}
+
+function renderMarkdown(text) {
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  // Tables
+  html = html.replace(/(\|.+\|\n)((?:\|[-:]+\|?)+\n)((?:\|.+\|\n?)+)/g, (_, header, sep, body) => {
+    const heads = header.split('|').filter(s => s.trim()).map(s => `<th>${s.trim()}</th>`).join('');
+    const rows = body.trim().split('\n').map(row => {
+      const cells = row.split('|').filter(s => s.trim()).map(s => `<td>${s.trim()}</td>`).join('');
+      return `<tr>${cells}</tr>`;
+    }).join('');
+    return `<table><thead><tr>${heads}</tr></thead><tbody>${rows}</tbody></table>`;
+  });
+
+  // Headings
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^# (.+)$/gm, '<h2>$1</h2>');
+
+  // Blockquote
+  html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+
+  // HR
+  html = html.replace(/^---+$/gm, '<hr>');
+
+  // Lists
+  html = html.replace(/^(\s*)[-*] (.+)$/gm, (_, ind, content) => `<li style="margin-left:${ind.length*8}px">${content}</li>`);
+  html = html.replace(/^(\s*)\d+\. (.+)$/gm, (_, ind, content) => `<li style="margin-left:${ind.length*8}px">${content}</li>`);
+  html = html.replace(/((?:<li[^>]*>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+
+  // Bold/italic/code
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // Risk tags
+  html = html.replace(/높음/g, '<span class="tag-high">높음</span>');
+  html = html.replace(/중간/g, '<span class="tag-mid">중간</span>');
+  html = html.replace(/낮음/g, '<span class="tag-low">낮음</span>');
+
+  // Paragraphs
+  html = html.replace(/\n\n+/g, '</p><p>');
+  html = html.replace(/\n/g, '<br>');
+  html = `<p>${html}</p>`;
+
+  // Clean up empty tags
+  html = html.replace(/<p>\s*(<h[123]>|<table>|<ul>|<hr>|<blockquote>)/g, '$1');
+  html = html.replace(/(<\/h[123]>|<\/table>|<\/ul>|<\/hr>|<\/blockquote>)\s*<\/p>/g, '$1');
+  html = html.replace(/<p>\s*<\/p>/g, '');
+
+  return html;
+}
+
+function appendQuickActions(ticker, catId) {
+  const wrap = document.getElementById('result-wrap');
+  if (!wrap) return;
+
+  let btns = '';
+  if (catId === 0) {
+    btns = `
+      <button class="qa-btn" onclick="quickAsk('${ticker} 종목의 가장 큰 투자 리스크 3가지를 구체적으로 설명해줘')">리스크 상세 분석</button>
+      <button class="qa-btn" onclick="quickAsk('${ticker} 적정 주가를 PER과 DCF 방식으로 계산해줘')">적정 주가 계산</button>
+      <button class="qa-btn" onclick="quickAsk('${ticker} 과 투자 성격이 비슷한 대안 종목 3개를 추천하고 비교해줘')">유사 종목 추천</button>
+      <button class="qa-btn" onclick="quickAsk('${ticker} 에 투자할 때 모니터링해야 할 핵심 지표와 이벤트를 정리해줘')">모니터링 체크리스트</button>`;
+  } else {
+    const remaining = CATS.filter(c => c.id !== catId).slice(0, 4);
+    btns = remaining.map(c =>
+      `<button class="qa-btn" onclick="selectCatAndRun(${c.id})">${c.label} 분석</button>`
+    ).join('') + `<button class="qa-btn" onclick="runAll()">전체 종합 분석</button>`;
+  }
+
+  const el = document.createElement('div');
+  el.className = 'quick-actions';
+  el.innerHTML = `<div class="qa-label">추가 분석</div><div class="qa-btns">${btns}</div>`;
+  wrap.appendChild(el);
+}
+
+function quickAsk(prompt) {
+  const apiKey = document.getElementById('api-key').value.trim();
+  const ticker = document.getElementById('ticker').value.trim();
+  if (!apiKey) { showToast('API 키를 입력해주세요', 'error'); return; }
+  if (isRunning) return;
+  runAnalysisCustom(apiKey, ticker, prompt);
+}
+
+async function runAnalysisCustom(apiKey, ticker, prompt) {
+  setRunning(true);
+  const content = document.getElementById('content');
+  const now = new Date().toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
+  content.innerHTML = `
+    <div class="result-wrap" id="result-wrap">
+      <div class="result-header">
+        <span class="res-ticker">${ticker}</span>
+        <span class="res-cat">심화 분석</span>
+        <span class="res-time">${now}</span>
+      </div>
+      <div class="result-body" id="result-body">
+        <div class="skeleton" style="width:70%"></div>
+        <div class="skeleton" style="width:90%"></div>
+      </div>
+    </div>`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-calls': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 3000,
+        stream: true,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        system: '당신은 전문 주식 분석가입니다. 웹 검색을 활용해 최신 데이터를 반영하고 마크다운 형식으로 한국어로 답변합니다.',
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const body = document.getElementById('result-body');
+    body.innerHTML = '';
+    let fullText = '';
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6).trim();
+        if (raw === '[DONE]') continue;
+        try {
+          const ev = JSON.parse(raw);
+          if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
+            fullText += ev.delta.text;
+            body.innerHTML = renderMarkdown(fullText) + '<span class="cursor"></span>';
+          }
+        } catch(e) {}
+      }
+    }
+    body.innerHTML = renderMarkdown(fullText);
+    setRunning(false);
+    document.getElementById('status-txt').textContent = '분석 완료';
+  } catch(err) {
+    document.getElementById('result-body').innerHTML = `<div style="color:var(--red)">${err.message}</div>`;
+    setRunning(false);
+  }
+}
+
+function selectCatAndRun(catId) {
+  if (isRunning) return;
+  document.querySelectorAll('.cat-item').forEach(x => x.classList.remove('active'));
+  const el = document.querySelector(`.cat-item[data-id="${catId}"]`);
+  if (el) { el.classList.add('active'); el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+  selectedCat = catId;
+  const cat = CATS.find(c => c.id === catId);
+  document.getElementById('topbar-cat').textContent = cat.label;
+  const apiKey = document.getElementById('api-key').value.trim();
+  const ticker = document.getElementById('ticker').value.trim();
+  if (apiKey && ticker) runAnalysis(apiKey, ticker, catId, cat.label);
+}
+
+// Save API key to localStorage
+document.getElementById('api-key').addEventListener('change', e => {
+  if (e.target.value) localStorage.setItem('ct_api_key', e.target.value);
+});
+const saved = localStorage.getItem('ct_api_key');
+if (saved) document.getElementById('api-key').value = saved;
+</script>
+</body>
+</html>
